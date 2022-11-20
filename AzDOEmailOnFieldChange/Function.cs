@@ -87,28 +87,29 @@ namespace AzDOEmailOnFieldChange
 
         public async Task<T> GetBody<T>(HttpRequest req)
         {
-            string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
-            return JsonConvert.DeserializeObject<T>(requestBody);
+            return JsonConvert.DeserializeObject<T>(await new StreamReader(req.Body).ReadToEndAsync());
         }
 
-        public async Task SendEmail(string to, string subject, string body, MailPriority priority = MailPriority.Normal)
+        public async Task SendEmail(string to, string subject, string body)
         {
 
             MailAddress from = new MailAddress(Environment.GetEnvironmentVariable("EmailFromAddress"));
-            MailMessage message = new MailMessage();
-            message.From = from;
+
+            MailMessage message = new MailMessage()
+            {
+                From = from,
+                Subject = subject,
+                Body = body.Replace(Environment.NewLine, "<Br />"),
+                IsBodyHtml = true,
+                Priority = MailPriority.Normal
+            };
 
             message.To.Add(to);
 
-            message.Subject = subject;
-            message.Body = body.Replace(Environment.NewLine, "<Br />");
-            message.IsBodyHtml = true;
-            message.Priority = priority;
-            using (SmtpClient client = new SmtpClient("smtp.office365.com", 587))
+            message.Priority = MailPriority.Normal;
+            using (SmtpClient client = new SmtpClient("smtp.office365.com", 587) { UseDefaultCredentials = false, EnableSsl = true })
             {
 
-                client.UseDefaultCredentials = false;
-                client.EnableSsl = true;
                 client.Credentials = new NetworkCredential(Environment.GetEnvironmentVariable("EmailFromAddress"), (await _secretClient.GetSecretAsync("email-password")).Value.Value);
 
                 ServicePointManager.ServerCertificateValidationCallback =
