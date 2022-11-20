@@ -1,4 +1,6 @@
-﻿namespace AzDOEmailOnFieldChange.Classes
+﻿using Newtonsoft.Json;
+
+namespace AzDOEmailOnFieldChange.Classes
 {
     public class Fields
     {
@@ -11,8 +13,12 @@
         public SystemChangeddate SystemChangedDate { get; set; }
         public SystemWatermark SystemWatermark { get; set; }
         public MicrosoftVSTSCommonSeverity MicrosoftVSTSCommonSeverity { get; set; }
+
+        [JsonProperty("Custom.CSPMResource")]
         public CustomCSPMResource CustomCSPMResource { get; set; }
+        [JsonProperty("Custom.CSLResource")]
         public CustomCSLResource CustomCSLResource { get; set; }
+        [JsonProperty("Custom.DeveloperResource")]
         public CustomDeveloperResource CustomDeveloperResource { get; set; }
     }
 
