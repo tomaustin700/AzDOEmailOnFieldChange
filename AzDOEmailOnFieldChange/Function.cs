@@ -106,7 +106,6 @@ namespace AzDOEmailOnFieldChange
 
             message.To.Add(to);
 
-            message.Priority = MailPriority.Normal;
             using (SmtpClient client = new SmtpClient("smtp.office365.com", 587) { UseDefaultCredentials = false, EnableSsl = true })
             {
 
