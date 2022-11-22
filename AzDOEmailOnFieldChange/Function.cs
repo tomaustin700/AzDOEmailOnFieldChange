@@ -17,6 +17,7 @@ using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
 using AzDOEmailOnFieldChange.Classes;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
+using Microsoft.TeamFoundation.Common;
 
 namespace AzDOEmailOnFieldChange
 {
@@ -29,9 +30,56 @@ namespace AzDOEmailOnFieldChange
             _secretClient = secretClient;
         }
 
+        [FunctionName(nameof(EmailOnFieldAssign))]
+        public async Task<IActionResult> EmailOnFieldAssign(
+         [HttpTrigger(AuthorizationLevel.Function, "post", Route = null)] HttpRequest req)
+        {
+            var body = await GetBody<WorkItemCreateBody>(req);
+
+            if (!string.IsNullOrEmpty(body.resource.fields.CustomDeveloperResource) || !string.IsNullOrEmpty(body.resource.fields.CustomCSLResource)
+                || !string.IsNullOrEmpty(body.resource.fields.CustomCSPMResource))
+            {
+                using (var workItemConnection = await Connect<WorkItemTrackingHttpClient>())
+                {
+                    var wi = await workItemConnection.GetWorkItemAsync(body.resource.id, new List<string>() { "Custom.DeveloperResource", "Custom.CSLResource", "Custom.CSPMResource" });
+
+                    var developerResource = body.resource.fields.CustomDeveloperResource;
+                    var cslResouce = body.resource.fields.CustomCSLResource;
+                    var cspmResource = body.resource.fields.CustomCSPMResource;
+
+                    if (developerResource != null && !string.IsNullOrEmpty(developerResource))
+                    {
+                        var newDeveloperResource = (IdentityRef)wi.Fields["Custom.DeveloperResource"];
+                        await SendEmail(newDeveloperResource.UniqueName, $"You have been assigned as the Developer Resource on Task{body.resource.id}",
+                            $"Hi {newDeveloperResource.DisplayName}, {Environment.NewLine} You have been assigned as the Developer Resource on Task{body.resource.id}");
+
+                    }
+
+                    if (cslResouce != null && !string.IsNullOrEmpty(cslResouce))
+                    {
+                        var newCSLResource = (IdentityRef)wi.Fields["Custom.CSLResource"];
+                        await SendEmail(newCSLResource.UniqueName, $"You have been assigned as the CSL Resource on Task{body.resource.id}",
+                            $"Hi {newCSLResource.DisplayName}, {Environment.NewLine} You have been assigned as the CSL Resource on Task{body.resource.id}");
+
+                    }
+
+                    if (cspmResource != null && !string.IsNullOrEmpty(cspmResource))
+                    {
+                        var newCSPMResource = (IdentityRef)wi.Fields["Custom.CSPMResource"];
+                        await SendEmail(newCSPMResource.UniqueName, $"You have been assigned as the CSPM Resource on Task{body.resource.id}",
+                            $"Hi {newCSPMResource.DisplayName}, {Environment.NewLine} You have been assigned as the CSPM Resource on Task{body.resource.id}");
+
+                    }
+                }
+            }
+
+            return new OkResult();
+
+        }
+
         [FunctionName(nameof(EmailOnFieldChange))]
         public async Task<IActionResult> EmailOnFieldChange(
-          [HttpTrigger(AuthorizationLevel.Function, "post", Route = null)] HttpRequest req)
+      [HttpTrigger(AuthorizationLevel.Function, "post", Route = null)] HttpRequest req)
         {
             var body = await GetBody<WebhookBody>(req);
 
